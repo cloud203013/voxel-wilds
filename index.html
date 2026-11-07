@@ -224,7 +224,7 @@ function setupScene(){
  if(typeof scene.getUniqueId!=='function'){let __voxelUid=1;scene.getUniqueId=function(){return __voxelUid++;};}
  scene.clearColor=new BABYLON.Color4(.56,.69,.68,1);scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.006;scene.fogColor=new BABYLON.Color3(.56,.69,.68);
  scene.collisionsEnabled=true;
- const hemi=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(0,1,0),.9);hemi.diffuse=new BABYLON.Color3(.78,.85,1);hemi.groundColor=new BABYLON.Color3(.35,.31,.23);
+ const hemi=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(0,1,0),scene);hemi.intensity=.9;hemi.diffuse=new BABYLON.Color3(.78,.85,1);hemi.groundColor=new BABYLON.Color3(.35,.31,.23);
  sun=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.45,-1,.35),scene);sun.position=new BABYLON.Vector3(25,40,-20);sun.intensity=1.25;
  shadowGen=new BABYLON.ShadowGenerator(1024,sun);shadowGen.useBlurExponentialShadowMap=true;shadowGen.blurKernel=16;
  camera=new BABYLON.UniversalCamera('playerCamera',new BABYLON.Vector3(0,terrainHeight(0,0)+1.65,0),scene);
