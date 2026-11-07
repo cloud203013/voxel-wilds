@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#101a19">
+  <title>Voxel Wilds — Survival</title>
+  <style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101a19;color:#f3f1e8;font-family:Inter,system-ui,-apple-system,Arial;touch-action:none;user-select:none}
+#renderCanvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:22px;background:linear-gradient(90deg,rgba(5,12,12,.86),rgba(5,12,12,.42)),linear-gradient(0deg,rgba(5,10,10,.5),transparent)}
+.loading-card,.menu-card{width:min(560px,100%);padding:28px 25px;border:1px solid #ffffff32;border-radius:18px;background:rgba(7,16,15,.86);box-shadow:0 24px 80px #0008;backdrop-filter:blur(14px)}
+.eyebrow{font-size:10px;letter-spacing:4px;font-weight:900;color:#e6bd78}
+h1{font-size:clamp(46px,10vw,76px);line-height:.86;letter-spacing:-2px;margin:16px 0}
+h1 span{color:#e6bd78}
+.menu-card p{max-width:430px;color:#d2dbd2;font-size:14px;line-height:1.65}
+.feature-row{display:flex;gap:15px;flex-wrap:wrap;margin:22px 0;color:#e6d8bc;font-size:10px;font-weight:800;letter-spacing:1px}
+.feature-row span:before{content:"◆";color:#e6bd78;margin-right:6px}
+.main-button{width:100%;padding:15px;border:0;border-radius:8px;background:linear-gradient(135deg,#f0c77f,#b77c3e);color:#1b1710;font-size:14px;font-weight:900;letter-spacing:1.5px}
+.menu-card small{display:block;margin-top:13px;color:#9eaaa1;font-size:10px;line-height:1.5}
+.load-track{height:5px;background:#ffffff22;border-radius:8px;overflow:hidden;margin-top:18px}.load-track i{display:block;height:100%;width:5%;background:#e6bd78;transition:width .25s}
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px}
+.brand{position:absolute;left:15px;top:14px;font-size:17px;font-weight:900;letter-spacing:1.5px;text-shadow:0 2px 6px #000}.brand b{color:#e6bd78}.brand small{display:block;font-size:9px;color:#d7dfd6;letter-spacing:1.8px;margin-top:2px}
+.meters{position:absolute;right:14px;top:14px;display:flex;gap:7px}.meter-card,.resources{background:#071111bd;border:1px solid #ffffff30;border-radius:8px;padding:7px 9px;backdrop-filter:blur(8px);min-width:78px}
+.meter-card label{display:block;font-size:9px;letter-spacing:1.5px;color:#c8d2c9}.meter-card strong{font-size:16px}.meter{height:4px;background:#ffffff24;border-radius:6px;overflow:hidden;margin-top:4px}.meter i{display:block;height:100%;width:100%;background:#8fc67a}
+.resources{position:absolute;left:14px;top:75px;display:flex;gap:12px;font-size:12px}
+#crosshair{position:fixed;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px;text-shadow:0 1px 4px #000}
+#toast{position:fixed;z-index:10;left:50%;top:22%;transform:translateX(-50%);padding:9px 14px;border:1px solid #ffffff35;border-radius:8px;background:#06100fdb;font-size:12px;white-space:nowrap}
+#desktopHelp{position:fixed;z-index:6;bottom:14px;left:14px;padding:8px 10px;background:#06100fb9;border:1px solid #ffffff25;border-radius:7px;font-size:10px;color:#e1e5dc;pointer-events:none}
+#hotbar{position:fixed;z-index:7;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto}
+.hot-slot{width:58px;height:54px;border:1px solid #ffffff45;border-radius:8px;background:#071111c9;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.hot-slot b{font-size:20px}.hot-slot small{font-size:8px;letter-spacing:.5px}.hot-slot.selected{border:2px solid #e6bd78;background:#4b3822dd}
+#mobileControls{position:fixed;z-index:8;inset:0;pointer-events:none}
+#lookZone{position:absolute;left:35%;right:0;top:14%;bottom:26%;pointer-events:auto;touch-action:none}
+#joystick{position:absolute;left:18px;bottom:25px;width:126px;height:126px;border-radius:50%;border:1px solid #ffffff65;background:#06100f66;pointer-events:auto;touch-action:none}
+#stickKnob{position:absolute;left:37px;top:37px;width:52px;height:52px;border-radius:50%;background:#d4ad70cc;border:2px solid #fff9;box-shadow:0 4px 12px #0008}
+#actionPad{position:absolute;right:13px;bottom:22px;display:grid;grid-template-columns:repeat(2,62px);gap:8px;pointer-events:auto}
+.action-button{width:62px;height:57px;border-radius:13px;border:1px solid #ffffff65;background:#071111d9;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;touch-action:none}
+.action-button span{font-size:21px;font-weight:800}.action-button small{font-size:8px;font-weight:900;letter-spacing:.5px}.action-main{background:#a8743ecf;border-color:#f0cb91}
+@media(min-width:800px){#mobileControls{display:none!important}}
+@media(max-width:700px){#desktopHelp{display:none!important}#hotbar{bottom:168px}.brand{font-size:14px}.meters{gap:4px}.meter-card{min-width:68px;padding:6px}.resources{top:67px}}
+
+  </style>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+<body>
+  <canvas id="renderCanvas" aria-label="Mondo di gioco"></canvas>
+
+  <section id="loading" class="screen">
+    <div class="loading-card">
+      <div class="eyebrow">SURVIVAL FRONTIER</div>
+      <h1>VOXEL <span>WILDS</span></h1>
+      <p id="loadingText">Preparazione del mondo...</p>
+      <div class="load-track"><i id="loadBar"></i></div>
+    </div>
+  </section>
+
+  <section id="startScreen" class="screen hidden">
+    <div class="menu-card">
+      <div class="eyebrow">UN MONDO SELVAGGIO TI ASPETTA</div>
+      <h1>VOXEL<br><span>WILDS</span></h1>
+      <p>Esplora una frontiera voxel, raccogli risorse, costruisci il tuo rifugio e sopravvivi.</p>
+      <div class="feature-row"><span>MONDO VOXEL</span><span>SURVIVAL</span><span>CRAFT & BUILD</span></div>
+      <button id="playButton" class="main-button">ENTRA NEL MONDO</button>
+      <small>Demo iniziale · Safari iPhone e browser desktop · Connessione Internet richiesta per caricare Babylon.js</small>
+    </div>
+  </section>
+
+  <header id="hud" class="hidden">
+    <div class="brand">VOXEL <b>WILDS</b><small>DAY <span id="dayValue">01</span> · <span id="clockValue">08:00</span></small></div>
+    <div class="meters">
+      <div class="meter-card"><label>VITA</label><strong id="healthValue">100</strong><div class="meter"><i id="healthBar"></i></div></div>
+      <div class="meter-card"><label>FAME</label><strong id="hungerValue">100</strong><div class="meter"><i id="hungerBar"></i></div></div>
+    </div>
+    <div class="resources"><span>🪵 <b id="woodValue">0</b></span><span>🪨 <b id="stoneValue">0</b></span></div>
+  </header>
+
+  <div id="crosshair" class="hidden">+</div>
+  <div id="toast" class="hidden"></div>
+  <div id="desktopHelp" class="hidden">WASD muovi · Mouse guarda · Click usa · E raccogli · 1/2/3 strumenti · R ricarica</div>
+
+  <div id="mobileControls" class="hidden">
+    <div id="lookZone" aria-label="Trascina per guardarti intorno"></div>
+    <div id="joystick"><div id="stickKnob"></div></div>
+    <div id="actionPad">
+      <button id="useAction" class="action-button action-main"><span>⛏</span><small>USA</small></button>
+      <button id="collectAction" class="action-button"><span>✋</span><small>RACCOGLI</small></button>
+      <button id="jumpAction" class="action-button"><span>↑</span><small>SALTA</small></button>
+      <button id="reloadAction" class="action-button"><span>↻</span><small>RICARICA</small></button>
+    </div>
+  </div>
+
+  <nav id="hotbar" class="hidden">
+    <button class="hot-slot selected" data-slot="1"><b>⛏</b><small>PICCONE</small></button>
+    <button class="hot-slot" data-slot="2"><b>▰</b><small>PISTOLA</small></button>
+    <button class="hot-slot" data-slot="3"><b>▦</b><small>MURO</small></button>
+  </nav>
+
+  <script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('renderCanvas');
+const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+let engine, scene, camera, sun, shadowGen, groundMat, dayTime = 8, day = 1;
+let running = false, toastTimer = 0, selectedSlot = 1;
+const state = {health:100,hunger:100,wood:0,stone:0,ammo:12,reserve:48,x:0,z:0,vy:0,onGround:true};
+const input = {forward:0,side:0,keys:{},lookId:null,lastX:0,joyId:null};
+const blockData = new Map();
+const enemies = [];
+const resourceMeshes = [];
+const chunkSize = 16, worldRadius = 2;
+let worldSeed = 9173;
+
+function rand2(x,z){const v=Math.sin(x*127.1+z*311.7+worldSeed)*43758.5453;return v-Math.floor(v);}
+function terrainHeight(x,z){return Math.floor(3 + Math.sin(x*.12)*1.5 + Math.cos(z*.11)*1.4 + Math.sin((x+z)*.07)*1.3);}
+function key(x,y,z){return `${x},${y},${z}`;}
+function setBlock(x,y,z,type){blockData.set(key(x,y,z),type);}
+function getBlock(x,y,z){return blockData.get(key(x,y,z))||0;}
+function notify(message){const el=$('toast');el.textContent=message;el.classList.remove('hidden');toastTimer=1.6;}
+function setLoad(percent,message){$('loadBar').style.width=percent+'%';$('loadingText').textContent=message;}
+function updateHUD(){
+ $('healthValue').textContent=Math.ceil(state.health);$('hungerValue').textContent=Math.ceil(state.hunger);
+ $('healthBar').style.width=state.health+'%';$('hungerBar').style.width=state.hunger+'%';
+ $('woodValue').textContent=state.wood;$('stoneValue').textContent=state.stone;
+ document.querySelectorAll('.hot-slot').forEach(el=>el.classList.toggle('selected',Number(el.dataset.slot)===selectedSlot));
+}
+function createBlockMaterial(hex){const m=new BABYLON.StandardMaterial('block_'+hex,scene);m.diffuseColor=BABYLON.Color3.FromHexString(hex);m.specularColor=new BABYLON.Color3(.05,.05,.05);return m;}
+function buildWorld(){
+  // Store voxel data first, then emit only exposed faces into one mesh per chunk.
+  // This keeps draw calls low enough for mobile browsers.
+  const mats = {grass:1,dirt:2,stone:3,wood:4,leaf:5,sand:6};
+  const heights = new Map();
+  for(let x=-32;x<32;x++)for(let z=-32;z<32;z++){
+    const h=terrainHeight(x,z);heights.set(`${x},${z}`,h);
+    for(let y=0;y<=h;y++)setBlock(x,y,z,y===h?mats.grass:(y>=h-2?mats.dirt:mats.stone));
+  }
+  // Voxel trees, with a clear spawn area.
+  for(let x=-29;x<29;x+=2)for(let z=-29;z<29;z+=2){
+    if(Math.hypot(x,z)<7||rand2(x*2,z*2)<.64)continue;
+    const h=heights.get(`${x},${z}`)||terrainHeight(x,z);
+    if(rand2(x+12,z-4)>.34){
+      for(let y=h+1;y<=h+4;y++)setBlock(x,y,z,mats.wood);
+      for(let layer=0;layer<3;layer++){
+        const radius=layer===2?1:2;
+        for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){
+          if(Math.abs(dx)+Math.abs(dz)>radius+1)continue;
+          setBlock(x+dx,h+3+layer,z+dz,mats.leaf);
+        }
+      }
+    }else{
+      setBlock(x,h+1,z,mats.stone);setBlock(x+1,h+1,z,mats.stone);
+      setBlock(x,h+1,z+1,mats.stone);
+    }
+  }
+  // A small voxel cabin landmark.
+  for(let x=10;x<=13;x++)for(let z=8;z<=11;z++){
+    const h=heights.get(`${x},${z}`)||terrainHeight(x,z);
+    setBlock(x,h+1,z,mats.wood);
+    if(x===10||x===13||z===8||z===11){
+      setBlock(x,h+2,z,mats.wood);setBlock(x,h+3,z,mats.wood);
+    }
+  }
+  const chunkMat=new BABYLON.StandardMaterial('voxelChunkMaterial',scene);
+  chunkMat.diffuseColor=new BABYLON.Color3(1,1,1);
+  chunkMat.specularColor=new BABYLON.Color3(.035,.035,.035);
+  chunkMat.useVertexColors=true;
+  const palette={
+    1:[.39,.55,.29],2:[.47,.34,.22],3:[.48,.5,.48],
+    4:[.48,.32,.17],5:[.19,.38,.2],6:[.65,.57,.39]
+  };
+  const faces=[
+    {n:[1,0,0],v:[[1,0,0],[1,1,0],[1,1,1],[1,0,1]],shade:.82},
+    {n:[-1,0,0],v:[[0,0,1],[0,1,1],[0,1,0],[0,0,0]],shade:.72},
+    {n:[0,1,0],v:[[0,1,0],[0,1,1],[1,1,1],[1,1,0]],shade:1.12},
+    {n:[0,-1,0],v:[[0,0,1],[0,0,0],[1,0,0],[1,0,1]],shade:.58},
+    {n:[0,0,1],v:[[1,0,1],[1,1,1],[0,1,1],[0,0,1]],shade:.9},
+    {n:[0,0,-1],v:[[0,0,0],[0,1,0],[1,1,0],[1,0,0]],shade:.78}
+  ];
+  const chunkMeshes=new Map();
+  function chunkKey(cx,cz){return `${cx},${cz}`;}
+  function buildChunk(cx,cz){
+    const positions=[],indices=[],colors=[];let vertex=0;
+    for(let x=cx*chunkSize;x<(cx+1)*chunkSize;x++)for(let z=cz*chunkSize;z<(cz+1)*chunkSize;z++)for(let y=0;y<14;y++){
+      const type=getBlock(x,y,z);if(!type)continue;const base=palette[type]||palette[3];
+      for(const face of faces){
+        const nx=x+face.n[0],ny=y+face.n[1],nz=z+face.n[2];if(getBlock(nx,ny,nz))continue;
+        for(const v of face.v){positions.push(x-cx*chunkSize+v[0],y+v[1],z-cz*chunkSize+v[2]);const variation=.96+rand2(x+y*3,z+face.n[0]*11+face.n[2]*7)*.08;colors.push(base[0]*face.shade*variation,base[1]*face.shade*variation,base[2]*face.shade*variation,1);}
+        indices.push(vertex,vertex+1,vertex+2,vertex,vertex+2,vertex+3);vertex+=4;
+      }
+    }
+    const mesh=new BABYLON.Mesh(`chunk_${cx}_${cz}`,scene);
+    const vd=new BABYLON.VertexData();vd.positions=positions;vd.indices=indices;vd.colors=colors;
+    const normals=[];BABYLON.VertexData.ComputeNormals(positions,indices,normals);vd.normals=normals;vd.applyToMesh(mesh);
+    mesh.position.set(cx*chunkSize,0,cz*chunkSize);mesh.material=chunkMat;mesh.checkCollisions=true;mesh.receiveShadows=true;
+    chunkMeshes.set(chunkKey(cx,cz),mesh);
+  }
+  for(let cx=-2;cx<2;cx++)for(let cz=-2;cz<2;cz++)buildChunk(cx,cz);
+  function rebuildChunkAt(x,z){
+    const cx=Math.floor(x/chunkSize),cz=Math.floor(z/chunkSize),k=chunkKey(cx,cz);
+    const old=chunkMeshes.get(k);if(old)old.dispose();buildChunk(cx,cz);
+  }
+  scene.metadata={...(scene.metadata||{}),rebuildChunkAt};
+  // Landmark mountains are low-poly silhouettes beyond the playable area.
+  const mountainMat=new BABYLON.StandardMaterial('mountainMat',scene);mountainMat.diffuseColor=new BABYLON.Color3(.34,.4,.36);
+  for(let i=0;i<18;i++){const a=i/18*Math.PI*2,r=39+rand2(i,2)*3,h=5+rand2(i,7)*8;const m=BABYLON.MeshBuilder.CreateBox('distant_peak',{width:5,height:h,depth:5},scene);m.position.set(Math.cos(a)*r,h/2,Math.sin(a)*r);m.material=mountainMat;m.isPickable=false;}
+}
+function makeEnemy(x,z){
+ const root=new BABYLON.TransformNode('wanderer',scene);
+ const body=BABYLON.MeshBuilder.CreateBox('body',{width:.65,height:1,depth:.42},scene);body.parent=root;body.position.y=.9;
+ const head=BABYLON.MeshBuilder.CreateBox('head',{size:.48},scene);head.parent=root;head.position.y=1.65;
+ const skin=new BABYLON.StandardMaterial('enemySkin',scene);skin.diffuseColor=new BABYLON.Color3(.48,.52,.4);body.material=skin;head.material=skin;
+ const eyes=new BABYLON.StandardMaterial('eyes',scene);eyes.emissiveColor=new BABYLON.Color3(.8,.12,.06);
+ for(const side of [-1,1]){const eye=BABYLON.MeshBuilder.CreateBox('eye',{width:.07,height:.06,depth:.03},scene);eye.parent=root;eye.position.set(side*.12,1.7,-.245);eye.material=eyes;}
+ root.position.set(x,terrainHeight(Math.round(x),Math.round(z)),z);enemies.push({root,hp:2,attack:0});
+}
+function setupScene(){
+ engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
+ scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.56,.69,.68,1);scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.006;scene.fogColor=new BABYLON.Color3(.56,.69,.68);
+ scene.collisionsEnabled=true;
+ const hemi=new BABYLON.HemisphericLight('sky',new BABYLON.Vector3(0,1,0),.9);hemi.diffuse=new BABYLON.Color3(.78,.85,1);hemi.groundColor=new BABYLON.Color3(.35,.31,.23);
+ sun=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.45,-1,.35),scene);sun.position=new BABYLON.Vector3(25,40,-20);sun.intensity=1.25;
+ shadowGen=new BABYLON.ShadowGenerator(1024,sun);shadowGen.useBlurExponentialShadowMap=true;shadowGen.blurKernel=16;
+ camera=new BABYLON.UniversalCamera('playerCamera',new BABYLON.Vector3(0,terrainHeight(0,0)+1.65,0),scene);
+ camera.minZ=.1;camera.fov=1.18;camera.inertia=0;camera.angularSensibility=5000;camera.checkCollisions=true;camera.ellipsoid=new BABYLON.Vector3(.32,.85,.32);camera.applyGravity=false;
+ camera.keysUp=[];camera.keysDown=[];camera.keysLeft=[];camera.keysRight=[];
+ buildWorld();
+ for(let i=0;i<6;i++){const a=rand2(i,9)*Math.PI*2,d=12+rand2(i,12)*12;makeEnemy(Math.cos(a)*d,Math.sin(a)*d);}
+ camera.position.set(0,terrainHeight(0,0)+1.65,0);
+ scene.onPointerObservable.add((pointerInfo)=>{
+   if(pointerInfo.type===BABYLON.PointerEventTypes.POINTERDOWN && !isTouch && running){if(pointerInfo.event.button===0)performAction();}
+ });
+}
+function pickVoxel(){
+ const origin=camera.position.clone(),dir=camera.getForwardRay(5).direction;
+ for(let d=.2;d<5;d+=.08){const q=origin.add(dir.scale(d));const x=Math.floor(q.x),y=Math.floor(q.y),z=Math.floor(q.z);const type=getBlock(x,y,z);if(type)return {x,y,z,type};}
+ return null;
+}
+function performAction(){
+ if(selectedSlot===1){
+   const hit=pickVoxel();if(!hit){notify('Mira un bloc da vicino');return;}
+   if(hit.type===1){state.wood+=1;notify('+1 risorsa raccolta');}
+   else if(hit.type===2||hit.type===3){state.stone+=1;notify('+1 pietra');}
+   setBlock(hit.x,hit.y,hit.z,0);
+   if(scene.metadata&&scene.metadata.rebuildChunkAt)scene.metadata.rebuildChunkAt(hit.x,hit.z);
+ }else if(selectedSlot===2){
+   if(state.ammo<=0){notify('Caricatore vuoto');return;}state.ammo--;
+   const ray=camera.getForwardRay(24);const hit=scene.pickWithRay(ray,m=>enemies.some(e=>m===e.root||m.parent===e.root));
+   if(hit&&hit.hit){const enemy=enemies.find(e=>hit.pickedMesh.parent===e.root);if(enemy){enemy.hp--;if(enemy.hp<=0){enemy.root.dispose();enemies.splice(enemies.indexOf(enemy),1);notify('Vagante eliminato');}else notify('Bersaglio colpito');}}
+   updateHUD();
+ }else if(selectedSlot===3){
+   if(state.wood<4){notify('Servono 4 legni');return;}const dir=camera.getForwardRay(3).direction;const x=Math.round(camera.position.x+dir.x*2),z=Math.round(camera.position.z+dir.z*2),y=terrainHeight(x,z)+1;
+   const b=BABYLON.MeshBuilder.CreateBox('placed_wall',{width:1,height:1,depth:1},scene);b.position.set(x,y,z);const m=new BABYLON.StandardMaterial('placedWood',scene);m.diffuseColor=new BABYLON.Color3(.55,.37,.2);b.material=m;b.checkCollisions=true;shadowGen.addShadowCaster(b);state.wood-=4;notify('Blocco costruito');updateHUD();
+ }
+}
+function collectNearby(){
+ let best=null,bd=3.2;for(const o of resourceMeshes){if(!o.mesh||o.mesh.isDisposed())continue;if(o.type==='leaf')continue;const d=Math.hypot(camera.position.x-o.mesh.position.x,camera.position.z-o.mesh.position.z);if(d<bd){bd=d;best=o;}}
+ if(!best){notify('Nessuna risorsa vicina');return;}
+ if(best.type==='tree'){state.wood+=3;notify('+3 legno');}else{state.stone+=2;notify('+2 pietra');}
+ const rx=best.rootX,rz=best.rootZ;
+ resourceMeshes.filter(o=>o.rootX===rx&&o.rootZ===rz).forEach(o=>{if(o.mesh&&!o.mesh.isDisposed())o.mesh.dispose();});
+ updateHUD();
+}
+function selectSlot(n){selectedSlot=n;updateHUD();}
+function bindControls(){
+ document.querySelectorAll('.hot-slot').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();selectSlot(Number(b.dataset.slot));}));
+ $('useAction').addEventListener('pointerdown',e=>{e.preventDefault();performAction();});
+ $('collectAction').addEventListener('pointerdown',e=>{e.preventDefault();collectNearby();});
+ $('jumpAction').addEventListener('pointerdown',e=>{e.preventDefault();if(state.onGround){state.vy=6;state.onGround=false;}});
+ $('reloadAction').addEventListener('pointerdown',e=>{e.preventDefault();const n=Math.min(12-state.ammo,state.reserve);if(n){state.ammo+=n;state.reserve-=n;notify('Ricarica completata');updateHUD();}else notify('Nessuna munizione');});
+ const joy=$('joystick'),knob=$('stickKnob');
+ function moveJoy(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy),max=42;if(len>max){dx=dx/len*max;dy=dy/len*max;}knob.style.transform=`translate(${dx}px,${dy}px)`;input.side=dx/max;input.forward=-dy/max;}
+ function resetJoy(){input.joyId=null;input.forward=0;input.side=0;knob.style.transform='translate(0,0)';}
+ joy.addEventListener('pointerdown',e=>{input.joyId=e.pointerId;joy.setPointerCapture(e.pointerId);moveJoy(e);});
+ joy.addEventListener('pointermove',e=>{if(input.joyId===e.pointerId)moveJoy(e);});
+ joy.addEventListener('pointerup',resetJoy);joy.addEventListener('pointercancel',resetJoy);
+ const look=$('lookZone');
+ look.addEventListener('pointerdown',e=>{input.lookId=e.pointerId;input.lastX=e.clientX;look.setPointerCapture(e.pointerId);});
+ look.addEventListener('pointermove',e=>{if(input.lookId===e.pointerId){camera.rotation.y+=(input.lastX-e.clientX)*.006;input.lastX=e.clientX;}});
+ look.addEventListener('pointerup',()=>input.lookId=null);look.addEventListener('pointercancel',()=>input.lookId=null);
+ window.addEventListener('keydown',e=>{input.keys[e.code]=true;if(e.code==='Digit1')selectSlot(1);if(e.code==='Digit2')selectSlot(2);if(e.code==='Digit3')selectSlot(3);if(e.code==='KeyE')collectNearby();if(e.code==='KeyR'){const n=Math.min(12-state.ammo,state.reserve);state.ammo+=n;state.reserve-=n;updateHUD();}});
+ window.addEventListener('keyup',e=>input.keys[e.code]=false);
+ canvas.addEventListener('click',()=>{if(!isTouch&&running&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.();});
+ canvas.addEventListener('contextmenu',e=>e.preventDefault());
+}
+function update(dt){
+ if(!running)return;
+ const keyF=(input.keys.KeyW?1:0)-(input.keys.KeyS?1:0),keyS=(input.keys.KeyD?1:0)-(input.keys.KeyA?1:0);
+ const f=Math.max(-1,Math.min(1,input.forward+keyF)),s=Math.max(-1,Math.min(1,input.side+keyS));
+ const speed=input.keys.ShiftLeft?6:4;
+ const forward=new BABYLON.Vector3(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y));
+ const right=new BABYLON.Vector3(forward.z,0,-forward.x);
+ const move=forward.scale(f).add(right.scale(s));if(move.length()>1)move.normalize();
+ camera.moveWithCollisions(move.scale(speed*dt));
+ if(!state.onGround||state.vy!==0){state.vy-=16*dt;camera.position.y+=state.vy*dt;const floor=terrainHeight(Math.round(camera.position.x),Math.round(camera.position.z))+1.65;if(camera.position.y<=floor){camera.position.y=floor;state.vy=0;state.onGround=true;}}
+ state.hunger=Math.max(0,state.hunger-dt*.035);if(state.hunger===0)state.health=Math.max(0,state.health-dt*.25);
+ enemies.forEach(e=>{if(e.root.isDisposed())return;const dx=camera.position.x-e.root.position.x,dz=camera.position.z-e.root.position.z,d=Math.hypot(dx,dz);e.attack-=dt;if(d<14&&d>1.25){e.root.position.x+=dx/d*dt*.7;e.root.position.z+=dz/d*dt*.7;e.root.rotation.y=Math.atan2(dx,dz);}else if(d<=1.25&&e.attack<=0){state.health=Math.max(0,state.health-7);e.attack=1.2;notify('Sei stato colpito!');}});
+ dayTime+=dt*.03;if(dayTime>=20){dayTime=6;day++;}$('dayValue').textContent=String(day).padStart(2,'0');$('clockValue').textContent=String(Math.floor(dayTime)).padStart(2,'0')+':'+String(Math.floor((dayTime%1)*60)).padStart(2,'0');
+ const daylight=Math.max(.18,Math.sin((dayTime-6)/14*Math.PI));sun.intensity=.25+daylight*1.15;scene.fogDensity=.004+(1-daylight)*.006;
+ if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').classList.add('hidden');}
+ if(state.health<=0){running=false;notify('Sei caduto: ricarica la pagina per riprovare.');}
+ updateHUD();
+}
+function startGame(){
+ running=true;$('startScreen').classList.add('hidden');$('hud').classList.remove('hidden');$('crosshair').classList.remove('hidden');$('hotbar').classList.remove('hidden');
+ if(isTouch){$('mobileControls').classList.remove('hidden');}else{$('desktopHelp').classList.remove('hidden');canvas.requestPointerLock?.();}
+}
+async function boot(){
+ try{
+  if(!window.BABYLON){$('loadingText').textContent='Motore 3D non raggiungibile. Verifica la connessione e ricarica.';return;}
+  setLoad(15,'Avvio motore 3D...');
+  setupScene();setLoad(72,'Generazione del mondo voxel...');
+  await new Promise(r=>setTimeout(r,80));
+  bindControls();updateHUD();setLoad(100,'Pronto!');
+  await new Promise(r=>setTimeout(r,250));$('loading').classList.add('hidden');$('startScreen').classList.remove('hidden');
+  $('playButton').addEventListener('click',startGame);
+  engine.runRenderLoop(()=>{const dt=Math.min(engine.getDeltaTime()/1000,.05);update(dt);scene.render();});
+  window.addEventListener('resize',()=>engine.resize());
+ }catch(err){console.error(err);$('loadingText').textContent='Errore durante la creazione del mondo: '+err.message;}
+}
+boot();
+})();
+  </script>
+</body>
+</html>
